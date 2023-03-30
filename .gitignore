@@ -1,3 +1,7 @@
+build
+.bash_history
+boost
+
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
