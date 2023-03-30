@@ -1,0 +1,83 @@
+FROM debian:10.13
+
+LABEL Description="Debian Buster build environment"
+ENV HOME /src
+SHELL ["/bin/bash", "-c"]
+
+
+RUN su -
+
+###############################################
+# Change locales
+###############################################
+
+# Variables
+ARG LOCALE="ru_RU.UTF-8"
+ENV TZ=Europe/Moscow
+
+# Install locales and make sure tzdata exists
+RUN apt update && apt install -y locales tzdata
+RUN sed -i "/en_US.UTF-8/s/^#//g" /etc/locale.gen
+RUN sed -i "/ru_RU.UTF-8/s/^#//g" /etc/locale.gen
+RUN locale-gen
+
+ENV LANG="en_US.UTF-8" \
+    LANGUAGE="en_US:en" \
+    LC_NUMERIC="$LOCALE" \
+    LC_TIME="$LOCALE" \
+    LC_COLLATE="$LOCALE" \
+    LC_MONETARY="$LOCALE" \
+    LC_PAPER="$LOCALE" \
+    LC_NAME="$LOCALE" \
+    LC_ADDRESS="$LOCALE" \
+    LC_TELEPHONE="$LOCALE" \
+    LC_MEASUREMENT="$LOCALE" \
+    LC_IDENTIFICATION="$LOCALE"
+
+RUN update-locale
+
+# Timezone
+RUN echo $TZ > /etc/timezone
+RUN rm /etc/localtime && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
+
+
+
+###############################################
+# Install dev packages
+###############################################
+RUN apt update && apt install -y --no-install-recommends \
+    build-essential \
+    clang \
+    cmake \
+    gdb \
+    gcc \
+    g++ \
+    wget \
+    curl \
+    python-dev \
+    autotools-dev \
+    libicu-dev \
+    libbz2-dev \
+    postgresql-11 postgresql-client-11 \
+    libpq-dev \
+    # libboost-all-dev \
+    git \
+    nano \
+    sudo
+
+###############################################
+# Add some heavy 3-d party dependency
+###############################################
+# Boost
+RUN cd /root/ && \
+    wget --no-check-certificate --quiet \
+        https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.gz && \
+        tar xzf ./boost_1_77_0.tar.gz && \
+        cd ./boost_1_77_0 && \
+        chmod u+x ./bootstrap.sh && \
+        ./bootstrap.sh && \
+        ./b2 install && \
+        rm -rf ./boost_1_77_0.tar.gz
+# for copy public headers use:
+# cp -r /root/boost_1_77_0/boost /src/boost
